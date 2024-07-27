@@ -46,103 +46,103 @@ def load_data(filename, global_var, default=None):
         else:
             globals()[global_var] = default
 
-# These color constants are taken from discord.js library
+# Te stałe kolory pochodzą z biblioteki discord.js
 with open("embed_colors.txt") as f:
     data = f.read()
     colors = ast.literal_eval(data)
     color_list = [c for c in colors.values()]
 
-# Bi-Directional Dictionary to store message channel pairs
+# Dwukierunkowy słownik do przechowywania par wiadomości i kanałów
 message_channel_pairs = bidict()
 
-# Bi-Directional Dictionary to store message message pairs
+# Dwukierunkowy słownik do przechowywania par wiadomości
 message_pairs = bidict()
 
-async def get_opposite_message(message_id, bot): # Outputs the key in a dictionary if either the value matches or vice versa
+async def get_opposite_message(message_id, bot): # Zwraca klucz w słowniku, jeśli wartość pasuje lub odwrotnie
     global message_pairs
     global message_channel_pairs
     load_data('message_pairs.json.lzma', 'message_pairs', bidict())
     load_data('message_channel_pairs.json.lzma', 'message_channel_pairs', bidict())
     for key, value in message_pairs.items():
         try:
-            if value == int(message_id) or key == str(message_id): # Key is real message id
+            if value == int(message_id) or key == str(message_id): # Klucz to prawdziwe ID wiadomości
                 channel = bot.get_channel(message_channel_pairs[str(value)])
                 message = await channel.fetch_message(value)
-                return channel, message # This'll probabably break if there's multiple channel pairs since it won't return an array containing all the results, just the first channel found
+                return channel, message # To prawdopodobnie zepsuje się, jeśli będzie wiele par kanałów, ponieważ nie zwróci tablicy zawierającej wszystkie wyniki, tylko pierwszy znaleziony kanał
         except:
             return None, None
-    return None, None  # Return None if the value is not found in the dictionary
+    return None, None  # Zwraca None, jeśli wartość nie została znaleziona w słowniku
 
-async def get_original_message(message_id, bot): # Outputs the key in a dictionary if either the key or value of that pair matches
+async def get_original_message(message_id, bot): # Zwraca klucz w słowniku, jeśli klucz lub wartość tej pary pasuje
     global message_pairs
     global message_channel_pairs
     load_data('message_pairs.json.lzma', 'message_pairs', bidict())
     load_data('message_channel_pairs.json.lzma', 'message_channel_pairs', bidict())
     for key, value in message_pairs.items():
         try:
-            if value == int(message_id) or key == str(message_id): # Key is real message id
+            if value == int(message_id) or key == str(message_id): # Klucz to prawdziwe ID wiadomości
                 channel = bot.get_channel(message_channel_pairs[str(key)])
                 real_message = await channel.fetch_message(key)
                 return real_message
         except:
             return None
-    return None  # Return None if the value is not found in the dictionary
+    return None  # Zwraca None, jeśli wartość nie została znaleziona w słowniku
 
 async def get_user_from_input(input_str, bot):
-    # Regular expression pattern to match user mentions and IDs
+    # Wzorzec wyrażenia regularnego do dopasowania wzmiankach o użytkownikach i ID
     user_pattern = re.compile(r'<@!?(\d+)>|(\d+)')
 
-    # Try to find a match in the input string
+    # Próbuj znaleźć dopasowanie w ciągu wejściowym
     try:
         match = user_pattern.match(input_str)
     except TypeError:
         return None
 
     if match:
-        # Check if a user mention (<@user_id> or <@!user_id>) was found
+        # Sprawdź, czy znaleziono wzmiankę o użytkowniku (<@user_id> lub <@!user_id>)
         try:
             if match.group(1):
                 user_id = int(match.group(1))
             else:
-                # Use the numeric ID if no mention was found
+                # Użyj ID numerycznego, jeśli nie znaleziono wzmianki
                 user_id = int(match.group(2))
         except ValueError:
             return None
             
-        # Get the user object
+        # Pobierz obiekt użytkownika
         for guild in bot.guilds:
             try:
                 user = await guild.fetch_member(user_id)
                 if user:
-                    # User found, break out of the loop
+                    # Użytkownik znaleziony, wyjdź z pętli
                     break
             except discord.NotFound:
-                # User not found in this guild, continue to the next guild
+                # Użytkownik nie znaleziony w tej gildii, przejdź do następnej gildii
                 user = None
                 continue
         if user:
-            # Log successful user retrieval
-            print(f"User found: {user.name} (ID: {user.id})")
+            # Zaloguj pomyślne pobranie użytkownika
+            print(f"Znaleziono użytkownika: {user.name} (ID: {user.id})")
             return user
         else:
-            # Log user not found
-            print(f"User not found with ID: {user_id}")
+            # Zaloguj, że użytkownik nie został znaleziony
+            print(f"Nie znaleziono użytkownika o ID: {user_id}")
             return None
     else:
         return None
 
 async def check_user(user, bot, ctx):
         user_obj = await get_user_from_input(user, bot)
-        if user_obj == None and user == None: # Nothing provided
-            await ctx.send("You forgot to provide a user as an argument.")
+        if user_obj == None and user == None: # Nic nie podano
+            await ctx.send("Zapomniałeś podać użytkownika jako argumentu.")
             return
-        elif user_obj == None and user is not None: # Text channel(?)
+        elif user_obj == None and user is not None: # Kanał tekstowy(?)
             message = await get_original_message(user, bot)
             if message is not None:
                 user = await message.channel.guild.fetch_member(message.author.id)
                 return user
             else:
-                await ctx.send("The user provided is not valid.")
+                await ctx.send("Podany użytkownik jest nieprawidłowy.")
                 return
         elif user_obj is not None and user is not None:
             user = user_obj
@@ -155,40 +155,40 @@ class Warn(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # Define a new command
+    # Definiuj nową komendę
     @commands.command(
         name='warn',
-        description='The famous warn command',
-        usage='<@offender> called my mommy a fat :((((((( cri' # Todo: add direct messageID functionality for paired channels
+        description='Słynna komenda warn',
+        usage='<@offender> nazwał moją mamę grubą :((((((( cri' # Todo: dodaj funkcjonalność bezpośredniego ID wiadomości dla sparowanych kanałów
     )
     @has_permissions(manage_messages=True)
     async def warn_command(self, ctx, user=None, *, reason: str):
         user = await check_user(user, self.bot, ctx)
         if user.guild_permissions.manage_messages == True:
-            await ctx.send("The specified user has the \"Manage Messages\" permission (or higher) inside the guild/server.")
+            await ctx.send("Określony użytkownik ma uprawnienia \"Zarządzaj wiadomościami\" (lub wyższe) na serwerze.")
             return           
         if user.id == self.bot.user.id:
-            await ctx.send("Oh, REALLY now, huh? I do my best at maintaining this server and THIS is how you treat me? Screw this..")
+            await ctx.send("O, naprawdę, huh? Staram się jak najlepiej utrzymać ten serwer, a TY mnie tak traktujesz? Rzucam to..")
             return
         if user.bot:
-            await ctx.send("It's useless to warn a bot. Why would you even try.")
+            await ctx.send("Nie ma sensu ostrzegać bota. Po co w ogóle próbujesz.")
             return
         if user == ctx.author:
-            await ctx.send("Why the heck would you warn yourself? You hate yourself THAT much?")
+            await ctx.send("Dlaczego, do diabła, miałbyś ostrzegać siebie? Nienawidzisz siebie TAK bardzo?")
             return
 
         dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-        # Load existing data from the file
+        # Załaduj istniejące dane z pliku
         try:
             data = compress_json.load("members.json.lzma")
         except FileNotFoundError:
-            # If the file doesn't exist, initialize an empty dictionary
+            # Jeśli plik nie istnieje, zainicjalizuj pusty słownik
             data = {}
 
-        # Check if the user ID exists in the data and the 'warns' key is present and <= 0
+        # Sprawdź, czy ID użytkownika istnieje w danych i klucz 'warns' jest obecny i <= 0
         if str(user.id) in data and 'warns' in data[str(user.id)] and data[str(user.id)]['warns'] <= 0:
-            # Modify the data in memory
+            # Zmodyfikuj dane w pamięci
             data[str(user.id)]['warns'] = 1
             data[str(user.id)]['1'] = {
                 'warner': ctx.author.id,
@@ -198,16 +198,16 @@ class Warn(commands.Cog):
                 'datetime': dt_string
             }
         else:
-            # If the user has previous warns or doesn't exist in the data, update accordingly
+            # Jeśli użytkownik ma wcześniejsze ostrzeżenia lub nie istnieje w danych, zaktualizuj odpowiednio
             if str(user.id) not in data:
                 data[str(user.id)] = {}
 
-            # Increment warn count
+            # Zwiększ liczbę ostrzeżeń
             warn_amount = data[str(user.id)].get("warns", 0) + 1
             data[str(user.id)]["warns"] = warn_amount
             data[str(user.id)]["username"] = user.name
 
-            # Add a new warn entry
+            # Dodaj nowy wpis ostrzeżenia
             new_warn = {
                 str(warn_amount): {
                     'warner': ctx.author.id,
@@ -219,12 +219,12 @@ class Warn(commands.Cog):
             }
             data[str(user.id)].update(new_warn)
 
-        # Write the modified data back to the file, overwriting the previous contents
+        # Zapisz zmodyfikowane dane z powrotem do pliku, nadpisując poprzednie zawartości
         compress_json.dump(data, "members.json.lzma")
 
-        # Create and send an embed showing that the user has been warned successfully
+        # Utwórz i wyślij embed pokazujący, że użytkownik został pomyślnie ostrzeżony
         embed = discord.Embed(
-            title=f"{user.name}'s new warn",
+            title=f"Nowe ostrzeżenie dla {user.name}",
             color=random.choice(color_list)
         )
         embed.set_author(
@@ -233,36 +233,36 @@ class Warn(commands.Cog):
             url=f"https://discord.com/users/{ctx.message.author.id}/"
         )
         embed.add_field(
-            name=f"Warn {warn_amount}",
-            value=f"Warner: {ctx.author.name} (<@{ctx.author.id}>)\nReason: {reason}\nChannel: <#{str(ctx.channel.id)}>\nDate and Time: {dt_string}",
+            name=f"Ostrzeżenie {warn_amount}",
+            value=f"Osoba ostrzegająca: {ctx.author.name} (<@{ctx.author.id}>)\nPowód: {reason}\nKanał: <#{str(ctx.channel.id)}>\nData i godzina: {dt_string}",
             inline=True
         )
-        # Creates and sends embed(s)
+        # Tworzy i wysyła embed(y)
         await ctx.send(
-            content="Successfully added new warn.",
+            content="Pomyślnie dodano nowe ostrzeżenie.",
             embed=embed
         )
         paired_channel, paired_message = await get_opposite_message(ctx.message.id, self.bot)
         if paired_channel:
                 await paired_channel.send(
-                content="Successfully added new warn.",
+                content="Pomyślnie dodano nowe ostrzeżenie.",
                 embed=embed
             )
     @warn_command.error
     async def warn_handler(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            # Author is missing permissions
-            await ctx.send('{0.author.name}, you do not have the correct permissions to do so. *(commands.MissingPermissions error, action cancelled)*'.format(ctx))
+            # Autor nie ma odpowiednich uprawnień
+            await ctx.send('{0.author.name}, nie masz odpowiednich uprawnień do wykonania tej czynności. *(błąd commands.MissingPermissions, akcja anulowana)*'.format(ctx))
             return
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'user':
-                # Author did not specify the user to warn
-                await ctx.send("{0.author.name}, you forgot to specify a user to warn. *(commands.MissingRequiredArgument error, action cancelled)*".format(ctx))
+                # Autor nie określił użytkownika do ostrzeżenia
+                await ctx.send("{0.author.name}, zapomniałeś określić użytkownika do ostrzeżenia. *(błąd commands.MissingRequiredArgument, akcja anulowana)*".format(ctx))
                 return
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'reason':
-                # Author did not specify the reason
-                await ctx.send("{0.author.name}, you forgot to specify a reason. *(commands.MissingRequiredArgument error, action cancelled)*".format(ctx))
+                # Autor nie określił powodu
+                await ctx.send("{0.author.name}, zapomniałeś określić powodu. *(błąd commands.MissingRequiredArgument, akcja anulowana)*".format(ctx))
                 return
         traceback_str = traceback.format_exc()
         print(traceback_str)
@@ -271,7 +271,7 @@ class Warn(commands.Cog):
 
     @commands.command(
         name='warns',
-        description='See all the warns a user has',
+        description='Zobacz wszystkie ostrzeżenia, jakie ma użytkownik',
         usage='<@offender>',
         aliases=['warnings']
     )
@@ -281,27 +281,27 @@ class Warn(commands.Cog):
         try:
             data = compress_json.load("members.json.lzma")
         except FileNotFoundError:
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
             if paired_channel:
-                await paired_channel.send(f"{ctx.author.name}, user [{user.name}] does not have any warns.")
+                await paired_channel.send(f"{ctx.author.name}, użytkownik [{user.name}] nie ma żadnych ostrzeżeń.")
             return
     
         try:
             if 'warns' not in data.get(str(user.id), {}) or data[str(user.id)].get('warns') <= 0:
-                await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+                await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
                 if paired_channel:
-                    await paired_channel.send(f"{ctx.author.name}, user [{user.name}] does not have any warns.")
+                    await paired_channel.send(f"{ctx.author.name}, użytkownik [{user.name}] nie ma żadnych ostrzeżeń.")
                 return
         except:
             #raise commands.CommandInvokeError("user")
             return
         warn_amount = data[str(user.id)].get("warns", 0)
         last_noted_name = data[str(user.id)].get("username", user.name)
-        warns_word = "warn" if warn_amount == 1 else "warns"
+        warns_word = "ostrzeżenie" if warn_amount == 1 else "ostrzeżenia"
     
         embed = discord.Embed(
-            title=f"{user.name}'s warns",
-            description=f"They have {warn_amount} {warns_word}.",
+            title=f"Ostrzeżenia {user.name}",
+            description=f"Ma {warn_amount} {warns_word}.",
             color=random.choice(color_list)
         )
     
@@ -324,14 +324,14 @@ class Warn(commands.Cog):
             warn_channel = warn_dict.get('channel')
             warn_datetime = warn_dict.get('datetime')
     
-            warner_name = warner.name if warner else warn_dict.get('warner_name', 'Unknown User')
+            warner_name = warner.name if warner else warn_dict.get('warner_name', 'Nieznany Użytkownik')
     
             embed.add_field(
-                name=f"Warn {x}",
-                value=f"Warner: {warner_name} (<@{warner_id}>)\nReason: {warn_reason}\nChannel: <#{warn_channel}>\nDate and Time: {warn_datetime}",
+                name=f"Ostrzeżenie {x}",
+                value=f"Osoba ostrzegająca: {warner_name} (<@{warner_id}>)\nPowód: {warn_reason}\nKanał: <#{warn_channel}>\nData i godzina: {warn_datetime}",
                 inline=True
             )
-        # Send embed(s).
+        # Wyślij embed(y).
         await ctx.send(
             content=None,
             embed=embed
@@ -345,24 +345,24 @@ class Warn(commands.Cog):
     async def warns_handler(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'user':
-                # Author did not specify user
-                await ctx.send("Please mention someone to verify their warns.")
+                # Autor nie określił użytkownika
+                await ctx.send("Proszę wspomnieć kogoś, aby sprawdzić jego ostrzeżenia.")
             else:
-                await ctx.send("Command usage: `^warns <user>`")
+                await ctx.send("Użycie komendy: `^warns <użytkownik>`")
         elif isinstance(error, commands.CommandInvokeError):
-            await ctx.send("An error occurred while processing the command. Please try again later.")
+            await ctx.send("Wystąpił błąd podczas przetwarzania komendy. Proszę spróbować ponownie później.")
             traceback_str = traceback.format_exc()
             print(traceback_str)
             print(error)
         else:
-            await ctx.send(f"An error occurred: {error}")
+            await ctx.send(f"Wystąpił błąd: {error}")
             traceback_str = traceback.format_exc()
             print(traceback_str)
             print(error)
 
     @commands.command(
         name='remove_warn',
-        description='Removes a specific warn from a specific user.',
+        description='Usuwa konkretne ostrzeżenie od konkretnego użytkownika.',
         usage='@user 2',
         aliases=['removewarn','clearwarn','warn_remove']
     )
@@ -372,18 +372,18 @@ class Warn(commands.Cog):
         try:
             data = compress_json.load("members.json.lzma")
         except FileNotFoundError:
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
             return
     
         if 'warns' not in data.get(str(user.id), {}) or data[str(user.id)].get('warns') <= 0:
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
             return
     
         warn_amount = data[str(user.id)].get("warns", 0)
         specified_warn = data[str(user.id)].get(str(warn))
     
         if specified_warn is None:
-            await ctx.send(f"{ctx.author.name}, there is no warn number {warn} for user [{user.name} ({user.id})].")
+            await ctx.send(f"{ctx.author.name}, nie ma ostrzeżenia numer {warn} dla użytkownika [{user.name} ({user.id})].")
             return
     
         warn_warner = specified_warn.get('warner')
@@ -394,12 +394,12 @@ class Warn(commands.Cog):
         try:
             warn_warner_name = self.bot.get_user(id=warn_warner)
         except:
-            # User probably left
+            # Użytkownik prawdopodobnie opuścił serwer
             warn_warner_name = specified_warn.get('warner_name')
     
         confirmation_embed = discord.Embed(
-            title=f'{user.name}\'s warn number {warn}',
-            description=f'Warner: {warn_warner_name}\nReason: {warn_reason}\nChannel: <#{warn_channel}>\nDate and Time: {warn_datetime}',
+            title=f'Warn numer {warn} użytkownika {user.name}',
+            description=f'Osoba ostrzegająca: {warn_warner_name}\nPowód: {warn_reason}\nKanał: <#{warn_channel}>\nData i godzina: {warn_datetime}',
             color=random.choice(color_list),
         )
         confirmation_embed.set_author(
@@ -411,9 +411,9 @@ class Warn(commands.Cog):
         def check(ms):
             return ms.channel == ctx.message.channel and ms.author == ctx.message.author
         paired_channel, paired_message = await get_opposite_message(ctx.message.id, self.bot)
-        await ctx.send(content='Are you sure you want to remove this warn? (Reply with y or n)', embed=confirmation_embed)
+        await ctx.send(content='Czy na pewno chcesz usunąć to ostrzeżenie? (Odpowiedz y lub n)', embed=confirmation_embed)
         if paired_channel:
-            await paired_channel.send(content='Are you sure you want to remove this warn? (Reply with y or n)', embed=confirmation_embed)
+            await paired_channel.send(content='Czy na pewno chcesz usunąć to ostrzeżenie? (Odpowiedz y lub n)', embed=confirmation_embed)
         msg = await self.bot.wait_for('message', check=check)
         reply = msg.content.lower()
     
@@ -426,36 +426,36 @@ class Warn(commands.Cog):
                     del data[str(user.id)][str(x + 1)]
                 data[str(user.id)]['warns'] = warn_amount - 1
             compress_json.dump(data, "members.json.lzma")
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] has had their warn removed.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] miał usunięte ostrzeżenie.")
             if paired_channel:
-                await paired_channel.send(f"{ctx.author.name}, user [{user.name} ({user.id})] has had their warn removed.")
+                await paired_channel.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] miał usunięte ostrzeżenie.")
         elif reply in ('n', 'no', 'cancel'):
-            await ctx.send("Alright, action cancelled.")
+            await ctx.send("W porządku, akcja anulowana.")
         else:
-            await ctx.send("I have no idea what you want me to do. Action cancelled.")
+            await ctx.send("Nie wiem, co chciałeś, żebym zrobił. Akcja anulowana.")
 
     @remove_warn_command.error
     async def remove_warn_handler(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'user':
-                # Author did not specify a user
-                await ctx.send("Please mention someone to remove their warns.")
+                # Autor nie określił użytkownika
+                await ctx.send("Proszę wspomnieć kogoś, aby usunąć jego ostrzeżenia.")
                 return
             if error.param.name == 'warn':
-                # Author did not specify a warn ID
-                await ctx.send("You did not specify a warn ID to remove.")
+                # Autor nie określił ID ostrzeżenia
+                await ctx.send("Nie określiłeś ID ostrzeżenia do usunięcia.")
                 return
         if isinstance(error, commands.CommandInvokeError):
-            # Author probably specified an invalid ID.
-            await ctx.send("You specified an invalid ID.")
+            # Autor prawdopodobnie określił nieprawidłowe ID
+            await ctx.send("Określiłeś nieprawidłowe ID.")
             return
         await ctx.send(error)
 
     @commands.command(
         name='edit_warn',
-        description='Edits a specific warn from a specific user.',
+        description='Edytuje konkretne ostrzeżenie u konkretnego użytkownika.',
         usage='@user 2',
-        aliases=['editwarn','changewarn']
+        aliases=['editwarn', 'changewarn']
     )
     @has_permissions(manage_messages=True)
     async def edit_warn_command(self, ctx, user=None, *, warn: str):
@@ -463,24 +463,24 @@ class Warn(commands.Cog):
         try:
             data = compress_json.load("members.json.lzma")
         except FileNotFoundError:
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
             return
     
         if 'warns' not in data.get(str(user.id), {}) or data[str(user.id)].get('warns') <= 0:
-            await ctx.send(f"{ctx.author.name}, user [{user.name} ({user.id})] does not have any warns.")
+            await ctx.send(f"{ctx.author.name}, użytkownik [{user.name} ({user.id})] nie ma żadnych ostrzeżeń.")
             return
     
         def check(ms):
             return ms.channel == ctx.message.channel and ms.author == ctx.message.author
     
-        await ctx.send(content='What would you like to change the warn\'s reason to?')
+        await ctx.send(content='Na jaki powód chcesz zmienić to ostrzeżenie?')
         msg = await self.bot.wait_for('message', check=check)
         warn_new_reason = msg.content
     
         specified_warn = data[str(user.id)].get(warn)
     
         if specified_warn is None:
-            await ctx.send(f"{ctx.author.name}, there is no warn number {warn} for user [{user.name} ({user.id})].")
+            await ctx.send(f"{ctx.author.name}, nie ma ostrzeżenia numer {warn} dla użytkownika [{user.name} ({user.id})].")
             return
     
         warn_warner = specified_warn.get('warner')
@@ -490,12 +490,12 @@ class Warn(commands.Cog):
         try:
             warn_warner_name = self.bot.get_user(id=warn_warner)
         except:
-            # User probably left
+            # Użytkownik prawdopodobnie opuścił serwer
             warn_warner_name = specified_warn.get('warner_name')
     
         confirmation_embed = discord.Embed(
-            title=f'{user.name}\'s warn number {warn}',
-            description=f'Warner: {warn_warner_name}\nReason: {warn_new_reason}\nChannel: <#{warn_channel}>\nDate and Time: {warn_datetime}',
+            title=f'Ostrzeżenie numer {warn} użytkownika {user.name}',
+            description=f'Osoba ostrzegająca: {warn_warner_name}\nPowód: {warn_new_reason}\nKanał: <#{warn_channel}>\nData i godzina: {warn_datetime}',
             color=random.choice(color_list),
         )
         confirmation_embed.set_author(
@@ -504,40 +504,39 @@ class Warn(commands.Cog):
             url=f"https://discord.com/users/{ctx.message.author.id}/"
         )
         paired_channel, paired_message = await get_opposite_message(ctx.message.id, self.bot)
-        await ctx.send(content='Are you sure you want to edit this warn like this? (Reply with y/yes or n/no)', embed=confirmation_embed)
+        await ctx.send(content='Czy na pewno chcesz edytować to ostrzeżenie w ten sposób? (Odpowiedz y/yes lub n/no)', embed=confirmation_embed)
         if paired_channel:
-                await paired_channel.send(content='Are you sure you want to edit this warn like this? (Reply with y/yes or n/no)', embed=confirmation_embed)
+            await paired_channel.send(content='Czy na pewno chcesz edytować to ostrzeżenie w ten sposób? (Odpowiedz y/yes lub n/no)', embed=confirmation_embed)
         msg = await self.bot.wait_for('message', check=check)
         reply = msg.content.lower()
     
         if reply in ('y', 'yes', 'confirm'):
             specified_warn['reason'] = warn_new_reason
             compress_json.dump(data, "members.json.lzma")
-            await ctx.send(f"[{ctx.author.name}], user [{user.name} ({user.id})] has had their warn edited.")
+            await ctx.send(f"[{ctx.author.name}], użytkownik [{user.name} ({user.id})] miał edytowane ostrzeżenie.")
             if paired_channel:
-                    await paired_channel.send(f"[{ctx.author.name}], user [{user.name} ({user.id})] has had their warn edited.")
+                await paired_channel.send(f"[{ctx.author.name}], użytkownik [{user.name} ({user.id})] miał edytowane ostrzeżenie.")
         elif reply in ('n', 'no', 'cancel'):
-            await ctx.send("Alright, action cancelled.")
+            await ctx.send("W porządku, akcja anulowana.")
         else:
-            await ctx.send("I have no idea what you want me to do. Action cancelled.")
+            await ctx.send("Nie wiem, co chciałeś, żebym zrobił. Akcja anulowana.")
+            
     @edit_warn_command.error
     async def edit_warn_handler(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'user':
-                # Author did not specify a user
-                await ctx.send("Please mention someone to remove their warns.")
+                # Autor nie określił użytkownika
+                await ctx.send("Proszę wspomnieć kogoś, aby edytować jego ostrzeżenia.")
                 return
             if error.param.name == 'warn':
-                # Author did not specify a warn ID
-                await ctx.send("You did not specify a warn ID to remove.")
+                # Autor nie określił ID ostrzeżenia
+                await ctx.send("Nie określiłeś ID ostrzeżenia do edytowania.")
                 return
         if isinstance(error, commands.CommandInvokeError):
-            # Author probably specified an invalid ID.
-            await ctx.send("You specified an invalid ID.")
+            # Autor prawdopodobnie określił nieprawidłowe ID
+            await ctx.send("Określiłeś nieprawidłowe ID.")
             return
         await ctx.send(error)
-
-
 
 async def setup(bot):
     await bot.add_cog(Warn(bot))
