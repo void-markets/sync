@@ -20,7 +20,7 @@
 
 1. **Sklonuj repozytorium:**
    ```bash
-   git clone https://github.com/yourusername/sync.git
+   git clone https://github.com/void-markets/sync.git
 
 2. **Przejdź do katalogu z repozytorium:**
    ```bash
