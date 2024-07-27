@@ -1,22 +1,51 @@
 # **sync.**
 
--   **Parowanie Kanałów:** Łatwe parowanie dwóch kanałów.
-    
--   **Proste komendy:** Bot zawiera prosty zestaw komend, np. `^pair`, `^unpair`, `^list`, i `^help`.
+**sync.** to prosty bot do zarządzania kanałami Discord. Oto, co oferuje:
 
-**Wymagania:**
+## Funkcje
 
--   discord.py 
--   aiohttp 
+- **Parowanie Kanałów:** Łatwe parowanie dwóch kanałów.
+- **Proste Komendy:** Bot zawiera podstawowy zestaw komend:
+  - `^pair` — Parowanie kanałów
+  - `^unpair` — Rozparowanie kanałów
+  - `^list` — Wyświetlanie listy parowanych kanałów
+  - `^help` — Pomoc
 
-**Instalacja:**
+## Wymagania
 
-Sklonuj to repo, odpal `pip install requirements.txt`, ustaw token, i odpal bota.
-Trzevba pobrać ręcznie `1.0.9` bo `1.0.8` ma problemy `pip3 install compress-json==1.0.9`
+- `discord.py`
+- `aiohttp`
 
-**Oryginalny autor:**
+## Instalacja
+
+1. **Sklonuj repozytorium:**
+   ```bash
+   git clone https://github.com/yourusername/sync.git
+
+2. **Przejdź do katalogu z repozytorium:**
+   ```bash
+   cd sync
+
+3. **Zainstaluj wymagane pakiety:**
+   ```bash
+   pip install -r requirements.txt
+
+4. **Ustaw token w pliku konfiguracyjnym.**
+
+5. **Uruchom bota:**
+
+
+## Uwagi
+
+ - Wymagana jest ręczna instalacja wersji **1.0.9** pakietu **compress-json**, ponieważ wersja **1.0.8** ma problemy:
+
+
+
+## Oryginalny autor:
 [Stoxis (Discord-Bridge)](https://github.com/Stoxis/Discord-Bridge)
 
-**Licencja:**
+
+
+## Licencja:
 
 Ten projekt jest pod licencją [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
