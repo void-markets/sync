@@ -550,7 +550,6 @@ async def create_mirrored_message_embed(message):
     return embed, view
 
 
-# Zdarzenie do obsługi kopiowania wiadomości
 @bot.event
 async def on_message(message):
     if message.author.bot:
@@ -559,26 +558,46 @@ async def on_message(message):
         print(message.reference)
     
     # Znajdź sparowany kanał dla bieżącego kanału
-    for channel_id, data in channel_pairs.items(): # for channel_id, (webhook_url, paired_id) in channel_pairs.items():
+    for channel_id, data in channel_pairs.items():
         if message.channel.id == int(channel_id):
             paired_id = data['paired_id']
             webhook_url = data['webhook_url']
             global message_pairs
             global message_channel_pairs
             global members
-            if str(message.author.id) in members and 'nickname' in members[str(message.author.id)]: # Nickname istnieje
-                username = members[str(message.author.id)]['nickname'] # Użyj nickname
-            else: # Nickname nie istnieje
-                username = message.author.display_name # Użyj display_name
+            if str(message.author.id) in members and 'nickname' in members[str(message.author.id)]:
+                username = members[str(message.author.id)]['nickname']
+            else:
+                username = message.author.display_name
             webhook_url = channel_pairs[str(paired_id)]["webhook_url"]
+            
+            # Usuń wzmianki @here i @everyone
+            content = message.content
+            content = content.replace('@here', '`@here`').replace('@everyone', '`@everyone`')
+            
+            # Blokuj wszystkie linki
+            content = re.sub(r'(https?://)(\S+)', lambda m: f'[Link do {m.group(2).split("/")[0]}]', content)
+            
+            # Dodatkowe zabezpieczenia przed exploitami
+            content = discord.utils.escape_mentions(content)
+            content = content.replace('`', '\\`').replace('*', '\\*').replace('_', '\\_')
+            
+            # Zabezpieczenie przed wstrzykiwaniem złośliwego kodu
+            content = re.sub(r'```(?:\S*\n)?(.*?)```', lambda m: f'```{m.group(1).replace("`", "\\`")}```', content, flags=re.DOTALL)
+            content = re.sub(r'(?<!\w)([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', '[Email]', content)
+            
+            # Nowe zabezpieczenia
+            content = re.sub(r'`{2,}', '``', content)  # Unikaj złośliwego formatowania
+            content = re.sub(r'(@everyone|@here|@(\w+))', lambda m: f'`{m.group(0)}`', content)  # Escape wzmianki
+
             async with aiohttp.ClientSession() as session:
                 if message.reference:
                     embeds = []
                     view = None
-                    if str(message.reference.message_id) in message_pairs: # Pobierz ID przeciwnych wiadomości, ponieważ odpowiedź będzie w sparowanym kanale
-                        target_message_id = message_pairs[str(message.reference.message_id)] # message.reference.message_id to prawdziwa wiadomość
+                    if str(message.reference.message_id) in message_pairs:
+                        target_message_id = message_pairs[str(message.reference.message_id)]
                     elif int(message.reference.message_id) in message_pairs.inverse:
-                        target_message_id = message_pairs.inverse[int(message.reference.message_id)][0] # message.reference.message_id to wiadomość bota
+                        target_message_id = message_pairs.inverse[int(message.reference.message_id)][0]
                     else:
                         target_message_id = None
                     if target_message_id:
@@ -595,15 +614,23 @@ async def on_message(message):
                     file = await attachment.to_file(use_cached=True, spoiler=attachment.is_spoiler())
                     files.append(file)
                 webhook = discord.Webhook.from_url(webhook_url, session=session)
-                webhook = await bot.fetch_webhook(webhook.id) # Todo: Zmień kod par kanałów, aby zapisywał webhook.id zamiast URL webhooka, naprawdę nie chcę tego ponownie kodować...
+                webhook = await bot.fetch_webhook(webhook.id)
                 if view:
-                    response = await webhook.send(username=username, content=message.content, avatar_url=message.author.display_avatar.url, files=files, embeds=embeds, view=view, wait=True)
+                    response = await webhook.send(
+                        username=username, content=content, avatar_url=message.author.display_avatar.url, 
+                        files=files, embeds=embeds, view=view, wait=True,
+                        allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+                    )
                 else:
-                    response = await webhook.send(username=username, content=message.content, avatar_url=message.author.display_avatar.url, files=files, embeds=embeds, wait=True)
+                    response = await webhook.send(
+                        username=username, content=content, avatar_url=message.author.display_avatar.url, 
+                        files=files, embeds=embeds, wait=True,
+                        allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True)
+                    )
                 message_pairs[str(message.id)] = response.id
                 save_data('message_pairs.json.lzma', message_pairs)
-                message_channel_pairs[str(message.id)] = message.channel.id # Prawdziwa wiadomość
-                message_channel_pairs[str(response.id)] = response.channel.id # Odbita wiadomość
+                message_channel_pairs[str(message.id)] = message.channel.id
+                message_channel_pairs[str(response.id)] = response.channel.id
                 save_data('message_channel_pairs.json.lzma', message_channel_pairs)
             break
     await bot.process_commands(message)
